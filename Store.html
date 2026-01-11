@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RajeshStore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+      }
+    </style>
+  </head>
+
+  <body class="bg-indigo-50 text-gray-800">
+    <div
+      <div
+      class="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 shadow-lg sticky top-0 z-50 text-white"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-center gap-4 max-w-6xl mx-auto"
+      >
+        <h1 class="font-bold text-2xl tracking-wide flex items-center gap-2">
+          <span>🛍️</span> RajeshStore
+        </h1>
+        <div class="flex w-full md:w-auto gap-3 items-center">
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="🔍 Search..."
+            class="p-2 px-4 rounded-full text-gray-800 outline-none focus:ring-2 focus:ring-yellow-400 w-full md:w-64 shadow-inner"
+          />
+          <select
+            id="categoryFilter"
+            class="p-2 px-4 rounded-full text-gray-800 outline-none focus:ring-2 focus:ring-yellow-400 shadow-inner bg-white cursor-pointer hidden md:block"
+          >
+            <option value="all">All Categories</option>
+          </select>
+          <button
+            onclick="toggleCart()"
+            class="relative p-2 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <span class="text-2xl">🛒</span>
+            <span
+              id="cartBadge"
+              class="absolute -top-1 -right-1 bg-yellow-400 text-indigo-900 text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm scale-0 transition-transform duration-200"
+              >0</span
+            >
+          </button>
+        </div>
+        <!-- Mobile Category Filter -->
+        <select
+          id="mobileCategoryFilter"
+          class="md:hidden w-full p-2 px-4 rounded-full text-gray-800 outline-none focus:ring-2 focus:ring-yellow-400 shadow-inner bg-white cursor-pointer"
+        >
+          <option value="all">All Categories</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto mt-6 px-4 mb-24">
+      <div
+        id="products"
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full"
+      ></div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div
+      id="toast"
+      class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-opacity duration-300 pointer-events-none z-[80] font-medium flex items-center gap-2"
+    >
+      <span>✅</span> Item Added to Cart
+    </div>
+
+    <!-- Cart Overlay & Drawer -->
+    <div
+      id="cartOverlay"
+      onclick="toggleCart()"
+      class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity duration-300 opacity-0"
+    ></div>
+
+    <div
+      id="cartDrawer"
+      class="fixed inset-y-0 right-0 w-full md:w-[400px] bg-white shadow-2xl z-[70] transform translate-x-full transition-transform duration-300 flex flex-col"
+    >
+      <div
+        class="p-4 bg-indigo-600 text-white flex justify-between items-center shadow-md"
+      >
+        <h2 class="font-bold text-xl flex items-center gap-2">
+          🛒 Your Cart
+          <span
+            id="cartCount"
+            class="text-sm bg-indigo-500 px-2 py-0.5 rounded-full"
+            >0 items</span
+          >
+        </h2>
+        <button
+          onclick="toggleCart()"
+          class="text-2xl hover:bg-indigo-500 w-8 h-8 rounded flex items-center justify-center transition-colors"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-4" id="cartContent">
+        <div
+          id="emptyCartMessage"
+          class="h-full flex flex-col items-center justify-center text-gray-400 gap-4"
+        >
+          <span class="text-6xl">🛍️</span>
+          <p>Your cart is empty</p>
+          <button
+            onclick="toggleCart()"
+            class="text-indigo-600 font-semibold hover:underline"
+          >
+            Start Shopping
+          </button>
+        </div>
+
+        <div id="cartItemsContainer" class="hidden space-y-3">
+          <input
+            id="customerName"
+            class="border border-gray-200 bg-gray-50 p-3 w-full mb-4 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+            placeholder="👤 Your Name (Required)"
+          />
+          <div id="cartItems" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-gray-100 bg-gray-50">
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-gray-600">Total Amount</span>
+          <span class="font-bold text-2xl text-indigo-600"
+            >₹<span id="total">0</span></span
+          >
+        </div>
+        <button
+          onclick="checkout()"
+          class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 w-full p-4 text-white font-bold rounded-xl shadow-lg transform active:scale-95 transition-all flex justify-center items-center gap-2"
+        >
+          <span>WhatsApp Order</span> →
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const CSV_URL =
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vQJidfZNMPQjkIRkUx0jXkXXjKHTXmx1OnhcXs0YZ2K8SS4IzN1XIXrv3SolJJSSimOBP5xcVOzyqDC/pub?gid=0&single=true&output=csv";
+
+      // DOM Elements
+      const productsDiv = document.getElementById("products");
+      const cartItems = document.getElementById("cartItems");
+      const cartItemsContainer = document.getElementById("cartItemsContainer");
+      const emptyCartMessage = document.getElementById("emptyCartMessage");
+      const totalSpan = document.getElementById("total");
+      const categoryFilter = document.getElementById("categoryFilter");
+      const mobileCategoryFilter = document.getElementById(
+        "mobileCategoryFilter"
+      ); // Add mobile filter
+      const searchInput = document.getElementById("searchInput");
+      const customerName = document.getElementById("customerName");
+      const toast = document.getElementById("toast");
+
+      // Drawer Elements
+      const cartDrawer = document.getElementById("cartDrawer");
+      const cartOverlay = document.getElementById("cartOverlay");
+      const cartBadge = document.getElementById("cartBadge");
+      const cartCount = document.getElementById("cartCount");
+
+      let products = [],
+        cart = [];
+
+      fetch(CSV_URL)
+        .then((r) => r.text())
+        .then((text) => {
+          const rows = text.split(/\r?\n/).slice(1);
+
+          rows.forEach((row) => {
+            const cols = row.split(",");
+            if (cols[6]?.trim() !== "TRUE") return;
+
+            products.push({
+              category: cols[0],
+              name: cols[1],
+              unit: cols[2],
+              price: Number(cols[3]),
+              brand: cols[4],
+              type: cols[5],
+            });
+          });
+
+          loadCategories();
+          renderProducts(products);
+        });
+
+      function loadCategories() {
+        const cats = [...new Set(products.map((p) => p.category))];
+        cats.forEach((c) => {
+          const opt = `<option>${c}</option>`;
+          categoryFilter.innerHTML += opt;
+          mobileCategoryFilter.innerHTML += opt;
+        });
+      }
+
+      function applyFilters() {
+        const category =
+          window.innerWidth < 768
+            ? mobileCategoryFilter.value
+            : categoryFilter.value;
+        const term = searchInput.value.toLowerCase();
+
+        const filtered = products.filter((p) => {
+          const matchCat = category === "all" || p.category === category;
+          const matchSearch =
+            p.name.toLowerCase().includes(term) ||
+            p.brand.toLowerCase().includes(term);
+          return matchCat && matchSearch;
+        });
+
+        renderProducts(filtered);
+      }
+
+      categoryFilter.onchange = applyFilters;
+      mobileCategoryFilter.onchange = applyFilters;
+      searchInput.oninput = applyFilters;
+
+      function renderProducts(list) {
+        productsDiv.innerHTML = "";
+        list.forEach((p) => {
+          productsDiv.innerHTML += `
+      <div class="bg-white p-4 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-transparent hover:border-indigo-100 group flex flex-col justify-between h-full">
+        <div>
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-semibold bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full uppercase tracking-wider">${p.category}</span>
+            <span class="text-xs text-gray-400">${p.type}</span>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg mb-1 group-hover:text-indigo-600 transition-colors">${p.name}</h3>
+          <div class="text-sm text-gray-500 mb-3">${p.brand} • ${p.unit}</div>
+        </div>
+        
+        <div class="flex items-center justify-between mt-2 pt-3 border-t border-gray-50">
+          <div class="font-bold text-xl text-gray-800">₹${p.price}</div>
+          <button onclick="addToCart('${p.name}',${p.price},'${p.unit}')"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium shadow-md transition-colors flex items-center gap-1 text-sm">
+            Add <span>+</span>
+          </button>
+        </div>
+      </div>`;
+        });
+      }
+
+      function addToCart(name, price, unit) {
+        const f = cart.find((i) => i.name === name);
+        if (f) f.qty++;
+        else cart.push({ name, price, unit, qty: 1 });
+        renderCart();
+        showToast();
+        // toggleCart(true); // Removed auto-open
+      }
+
+      function showToast() {
+        toast.classList.remove("opacity-0", "translate-y-10");
+        setTimeout(
+          () => toast.classList.add("opacity-0", "translate-y-10"),
+          2000
+        );
+      }
+
+      function toggleCart(forceOpen = null) {
+        const isHidden = cartDrawer.classList.contains("translate-x-full");
+        const shouldOpen = forceOpen !== null ? forceOpen : isHidden;
+
+        if (shouldOpen) {
+          cartDrawer.classList.remove("translate-x-full");
+          cartOverlay.classList.remove("hidden");
+          setTimeout(() => cartOverlay.classList.remove("opacity-0"), 10);
+        } else {
+          cartDrawer.classList.add("translate-x-full");
+          cartOverlay.classList.add("opacity-0");
+          setTimeout(() => cartOverlay.classList.add("hidden"), 300);
+        }
+      }
+
+      function updateQuantity(idx, change) {
+        cart[idx].qty += change;
+        if (cart[idx].qty <= 0) {
+          cart.splice(idx, 1);
+        }
+        renderCart();
+      }
+
+      function removeFromCart(idx) {
+        cart.splice(idx, 1);
+        renderCart();
+      }
+
+      function renderCart() {
+        cartItems.innerHTML = "";
+        let total = 0;
+        let count = 0;
+
+        if (cart.length === 0) {
+          emptyCartMessage.classList.remove("hidden");
+          cartItemsContainer.classList.add("hidden");
+        } else {
+          emptyCartMessage.classList.add("hidden");
+          cartItemsContainer.classList.remove("hidden");
+        }
+
+        cart.forEach((item, idx) => {
+          total += item.price * item.qty;
+          count += item.qty;
+
+          const cartItemDiv = document.createElement("div");
+          cartItemDiv.className =
+            "bg-gray-50 p-3 rounded-lg flex justify-between items-center text-sm group hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-gray-100";
+
+          const itemInfo = document.createElement("div");
+          itemInfo.className = "flex-1";
+          itemInfo.innerHTML = `<div class="font-bold text-gray-800">${item.name}</div><div class="text-xs text-gray-500">${item.unit}</div>`;
+
+          const qtyControls = document.createElement("div");
+          qtyControls.className = "flex items-center gap-2 mt-1";
+
+          const decrementBtn = document.createElement("button");
+          decrementBtn.textContent = "-";
+          decrementBtn.className =
+            "w-6 h-6 flex items-center justify-center bg-white border border-gray-200 rounded-full text-gray-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors";
+          decrementBtn.onclick = () => updateQuantity(idx, -1);
+
+          const qtySpan = document.createElement("span");
+          qtySpan.textContent = item.qty;
+          qtySpan.className = "font-semibold w-4 text-center text-gray-800";
+
+          const incrementBtn = document.createElement("button");
+          incrementBtn.textContent = "+";
+          incrementBtn.className =
+            "w-6 h-6 flex items-center justify-center bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm";
+          incrementBtn.onclick = () => updateQuantity(idx, 1);
+
+          qtyControls.appendChild(decrementBtn);
+          qtyControls.appendChild(qtySpan);
+          qtyControls.appendChild(incrementBtn);
+
+          itemInfo.appendChild(qtyControls);
+
+          const removeBtn = document.createElement("button");
+          removeBtn.innerHTML = "×";
+          removeBtn.className =
+            "text-gray-400 hover:text-red-500 font-bold text-xl px-2 transition-colors";
+          removeBtn.onclick = () => removeFromCart(idx);
+
+          cartItemDiv.appendChild(itemInfo);
+          cartItemDiv.appendChild(removeBtn);
+          cartItems.appendChild(cartItemDiv);
+        });
+
+        totalSpan.innerText = total;
+
+        // Update badges
+        cartBadge.innerText = count;
+        cartCount.innerText = `${count} items`;
+
+        // Pop animation
+        cartBadge.classList.remove("scale-0");
+        cartBadge.classList.add("scale-125");
+        setTimeout(() => cartBadge.classList.remove("scale-125"), 200);
+
+        if (count === 0) {
+          cartBadge.classList.add("scale-0");
+        }
+      }
+
+      function checkout() {
+        if (!cart.length) return alert("Cart empty");
+
+        const name = customerName.value || "Customer";
+        const id = "ORD" + Date.now();
+        let msg = `🛒 *Order ${id}*%0A👤 ${name}%0A%0A`;
+        let total = 0;
+
+        cart.forEach((i) => {
+          msg += `${i.name} (${i.unit}) x${i.qty} = ₹${i.price * i.qty}%0A`;
+          total += i.price * i.qty;
+        });
+
+        msg += `%0A*Total: ₹${total}*`;
+        window.open(`https://wa.me/919994624949?text=${msg}`);
+      }
+    </script>
+  </body>
+</html>
